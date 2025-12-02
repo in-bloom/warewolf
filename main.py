@@ -1,5 +1,5 @@
 import argparse
-from meta.hypno import hypno_toad
+from warewolf.hypno import hypno_toad
 
 def main():
     """Main program access point"""
