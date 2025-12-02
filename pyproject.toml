@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.8"
 
 dependencies = [
+    "pytest",
 ]
 
 # Comando CLI per eseguire main.py
@@ -17,5 +18,5 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.pytest]
-pythonpath = "src"
-testpaths = ["test"]
+pythonpath = ["src"]
+testpaths = ["tests"]

@@ -6,6 +6,7 @@
 
 ## Data cleaning
 - clean.py to split raw audio in separate clips
+- lib: pyaudioanalisys to define sequences
 - import audio sequences in db (with fk to original audio)
 
 ## Data labeling
