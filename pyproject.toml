@@ -1,7 +1,7 @@
 [project]
-name = "meta"
+name = "warewolf"
 version = "0.1.0"
-description = "Generic python project repo to be used as template."
+description = ""
 readme = "README.md"
 requires-python = ">=3.8"
 
