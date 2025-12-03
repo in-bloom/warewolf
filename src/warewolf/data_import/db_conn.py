@@ -20,7 +20,14 @@ CREATE TABLE IF NOT EXISTS sequences (
     FOREIGN KEY (recording_id) REFERENCES recordings (id) ON DELETE CASCADE
 );
 """
-
+## Possibile implementazione delle impostazioni per ogni audio sequence processato
+# FOREIGN KEY (settings_id) REFERENCES settings (id) ON DELETE RESTRAIN
+# CREATE TABLE IF NOT EXISTS settings (
+#     id INTEGER PRIMARY KEY AUTOINCREMENT
+#     campo1 TEXT
+#     campo2 TEXT
+#     campo3 TEXT
+# );
 def create_connection(db_path: str) -> sqlite3.Connection:
     """Create or open a SQLite DB and return a connection."""
     os.makedirs(os.path.dirname(db_path), exist_ok=True)
