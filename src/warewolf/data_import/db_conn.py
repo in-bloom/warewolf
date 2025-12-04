@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS sequences (
     name TEXT NOT NULL,
     timestamp INTEGER NOT NULL,
     duration INTEGER NOT NULL,
-    label TEXT,
+    label TEXT DEFAULT NULL,
     FOREIGN KEY (recording_id) REFERENCES recordings (id) ON DELETE CASCADE
 );
 """
