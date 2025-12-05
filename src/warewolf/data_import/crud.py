@@ -69,8 +69,6 @@ def insert_sequences(conn, sequences):
 
     with get_cursor(conn) as cur:
         # Normalize sequences to always have 5 elements (label defaults to None)
-        
-        
         cur.executemany(
             'INSERT INTO sequences (recording_id, name, timestamp, duration, label) VALUES (?, ?, ?, ?, ?)',
             normalized

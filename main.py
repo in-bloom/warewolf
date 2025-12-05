@@ -1,60 +1,60 @@
 import argparse
-import sys
 from pathlib import Path
+import sys
 
-# Ensure `src` is on sys.path so `warewolf` package can be imported when running
-# this script from the repository root.
+# Assicurati che `src` sia nel path
 project_root = Path(__file__).parent.resolve()
 sys.path.insert(0, str(project_root / "src"))
 
+# Import dei moduli interni
 from warewolf.hypno import hypno_toad
-import importlib
+from warewolf.data_import import crud, data_loader, db_conn
 
-# `import` is a Python keyword, and there's a package directory named `import`.
-# Import it dynamically to avoid syntax errors: `warewolf.import.crud`.
-crud_mod = importlib.import_module("warewolf.import.crud")
-create_db_with_schema = getattr(crud_mod, "create_db_with_schema")
+DB_FILE = project_root / "db" / "warewolf.db"
 
 
-def main():
-    """Main program access point
+def setup_database():
+    """Crea la cartella data e applica lo schema se disponibile."""
+    DB_FILE.parent.mkdir(exist_ok=True)
 
-    On startup this will ensure the SQLite database file exists and the
-    schema from `src/warewolf/import/schema.sql` is applied (if present).
-    """
-
-    # ensure data directory and db exist, apply schema if available
-    project_root = Path(__file__).parent.resolve()
-    data_dir = project_root / "data"
-    data_dir.mkdir(exist_ok=True)
-
-    db_file = data_dir / "warewolf.db"
-    schema_file = project_root / "src" / "warewolf" / "import" / "schema.sql"
-
-    if schema_file.exists():
-        print(f"Applying schema from {schema_file} to {db_file}")
-        conn = create_db_with_schema(str(db_file), schema_file=str(schema_file))
-    else:
-        print(f"No schema file found at {schema_file}; creating DB file {db_file} without schema")
-        conn = create_db_with_schema(str(db_file))
-
-    # close connection immediately; other parts of the app should open when needed
+    conn = db_conn.init_db(DB_FILE)
     if conn:
         conn.close()
 
-    parser = argparse.ArgumentParser(
-        description="Meta Project"
-    )
+
+def main():
+    # Assicurazione DB
+    setup_database()
+
+    # Parser CLI
+    parser = argparse.ArgumentParser(description="Warewolf CLI")
     parser.add_argument(
         "-hypno", "--hypnotoad",
         action="store_true",
         help="GLORY TO THE HYPNO TOAD"
     )
 
+    subparsers = parser.add_subparsers(dest="command", help="Subcommands")
+
+    # Subcommand: import recordings
+    parser_import = subparsers.add_parser("import-recordings", help="Import recordings from folder")
+    parser_import.add_argument("folder", type=str, help="Folder path with files")
+    parser_import.add_argument("data", type=str, help="Data value for recordings")
+    parser_import.add_argument("coordinates", type=str, help="Coordinates")
+
     args = parser.parse_args()
 
+    # Flag speciale
     if args.hypnotoad:
         hypno_toad()
+        return
+
+    # Gestione subcommands
+    if args.command == "import-recordings":
+        result = data_loader.import_data(str(DB_FILE), args.folder, args.data, args.coordinates)
+        print(result)
+    else:
+        parser.print_help()
 
 
 if __name__ == "__main__":
