@@ -97,7 +97,7 @@ def delete_sequences(conn, ids):
         )
         return cur.rowcount
 
-def get_sequences(conn, ids):
+def get_sequences(conn, ids=None):
     """
     Docstring for get_sequences
     
@@ -107,7 +107,9 @@ def get_sequences(conn, ids):
     :rtype: list | Any
     """
     if not ids:
-        return []
+        sql = "SELECT * FROM sequences ORDER BY id DESC LIMIT 10"
+        cur = conn.execute(sql)
+        return cur.fetchall()
 
     placeholders = ",".join("?" for _ in ids)
     sql = f"SELECT * FROM sequences WHERE id IN ({placeholders})"
