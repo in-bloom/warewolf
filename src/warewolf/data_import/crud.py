@@ -33,15 +33,19 @@ def delete_recordings(conn, ids):
         return cur.rowcount
 
 
-def get_recordings(conn, ids):
+def get_recordings(conn, ids=None):
     """
-    Docstring for get_recordings
+    Get recordings by IDs or fetch the first 10 if no IDs provided.
     
     :param conn: connection
-    :param ids: lit of integers
+    :param ids: list of integers (optional - if empty/None, returns first 10 recordings)
+    :return: list of tuples
     """
     if not ids:
-        return []
+        # Return first 10 recordings when no IDs specified
+        sql = "SELECT * FROM recordings ORDER BY id DESC LIMIT 10"
+        cur = conn.execute(sql)
+        return cur.fetchall()
 
     placeholders = ",".join("?" for _ in ids)
     sql = f"SELECT * FROM recordings WHERE id IN ({placeholders})"

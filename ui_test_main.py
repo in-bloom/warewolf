@@ -1,62 +1,168 @@
-from nicegui import ui
+import streamlit as st
 from warewolf.data_import import crud, data_loader, db_conn
-import sqlite3
 from pathlib import Path
+import pandas as pd
+import os
 
 DB_FILE = "db/warewolf.db"
+CACHE_FILE = ".streamlit_cache.txt"
 
-async def pick_folder(folder_input):
-    """Open native folder picker dialog"""
+def get_connection():
+    """Get or create database connection"""
+    if 'conn' not in st.session_state:
+        st.session_state.conn = db_conn.init_db(DB_FILE)
+    return st.session_state.conn
+
+def load_last_folder():
+    """Load the last used folder from cache"""
+    if os.path.exists(CACHE_FILE):
+        try:
+            with open(CACHE_FILE, 'r') as f:
+                folder = f.read().strip()
+                if os.path.isdir(folder):
+                    return folder
+        except:
+            pass
+    return ""
+
+def save_last_folder(folder):
+    """Save the folder path to cache"""
     try:
-        from tkinter import filedialog, Tk
-        root = Tk()
-        root.withdraw()  # Hide the main window
-        root.attributes('-topmost', True)  # Bring dialog to front
-        folder = filedialog.askdirectory(title="Select Recordings Folder")
-        root.destroy()
+        with open(CACHE_FILE, 'w') as f:
+            f.write(folder)
+    except:
+        pass
+
+def get_file_preview(folder_path):
+    """Get a preview of files in the folder"""
+    try:
+        if not os.path.isdir(folder_path):
+            return None
         
-        if folder:
-            folder_input.value = folder
-            ui.notify(f'Selected: {folder}', type='positive')
-    except ImportError:
-        ui.notify('tkinter not available. Please enter path manually.', type='warning')
-
-def run_ui():
-    ui.label('Warewolf Data Manager').classes('text-h4 text-bold')
-
-    with ui.card().classes('w-full max-w-2xl'):
-        ui.label('Import Recordings from Folder').classes('text-h6')
+        files = list(Path(folder_path).glob('*'))
+        audio_extensions = {'.mp3', '.wav', '.m4a', '.flac', '.ogg'}
+        audio_files = [f for f in files if f.suffix.lower() in audio_extensions]
         
-        with ui.row().classes('w-full items-center gap-2'):
-            folder_input = ui.input('Folder path').classes('flex-grow')
-            ui.button('Browse...', on_click=lambda: pick_folder(folder_input)).props('outline')
+        return {
+            'total_files': len(files),
+            'audio_files': len(audio_files),
+            'folders': len([f for f in files if f.is_dir()])
+        }
+    except:
+        return None
+
+def main():
+    st.set_page_config(page_title="Warewolf Data Manager", layout="wide")
+    st.title("🐺 Warewolf Data Manager")
+    
+    # Initialize connection
+    conn = get_connection()
+    
+    # Sidebar for import
+    with st.sidebar:
+        st.header("📁 Import Recordings")
+        st.divider()
         
-        data_input = ui.input('Data value (YYYY-MM-DD HH:MM:SS)')
-        coords_input = ui.input('Coordinates (optional)')
+        # Get last used folder or use empty
+        last_folder = load_last_folder()
         
-        ui.button('Import Recordings', on_click=lambda: ui.notify(
-            data_loader.import_data(DB_FILE, folder_input.value, data_input.value, coords_input.value)
-        )).props('color=primary')
+        # Folder path input with autocomplete suggestions
+        folder_path = st.text_input(
+            "Folder path",
+            value=last_folder,
+            placeholder="/path/to/recordings",
+            help="Enter the absolute path to your recordings folder"
+        )
+        
+        # Show folder preview
+        if folder_path:
+            preview = get_file_preview(folder_path)
+            if preview:
+                st.success(f"✅ Folder valid")
+                st.caption(f"📊 Preview: {preview['audio_files']} audio files, {preview['total_files']} total files")
+            else:
+                st.error(f"❌ Folder not found or invalid")
+        
+        st.divider()
+        
+        # Import form
+        st.subheader("Import Settings")
+        data_value = st.text_input(
+            "Date (YYYY-MM-DD HH:MM:SS)",
+            placeholder="2025-12-06 14:30:00",
+            help="The date/time for this recording"
+        )
+        coords_value = st.text_input(
+            "Coordinates (optional)",
+            placeholder="0,0",
+            help="Recording location (latitude,longitude)"
+        )
+        
+        if st.button("🚀 Import Recordings", key="import_btn", type="primary", width='stretch'):
+            if folder_path and data_value:
+                if not os.path.isdir(folder_path):
+                    st.error("❌ Invalid folder path")
+                else:
+                    try:
+                        with st.spinner("Importing..."):
+                            result = data_loader.import_data(DB_FILE, folder_path, data_value, coords_value or None)
+                        st.success(f"✅ Import completed: {result}")
+                        save_last_folder(folder_path)
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"❌ Error: {str(e)}")
+            else:
+                st.error("⚠️ Please fill in folder path and date")
+    
+    # Main content - Display recordings
+    st.header("📋 Recordings")
+    
+    col1, col2, col3 = st.columns([2, 1, 1])
+    
+    with col2:
+        if st.button("🔄 Refresh", width='stretch'):
+            st.rerun()
+    
+    with col3:
+        if st.button("🗑️ Clear Cache", width='stretch'):
+            if os.path.exists(CACHE_FILE):
+                os.remove(CACHE_FILE)
+            st.rerun()
+    
+    try:
+        rows = crud.get_recordings(conn)
+        
+        if rows:
+            # Convert tuples to dataframe
+            df = pd.DataFrame(
+                rows,
+                columns=['ID', 'Name', 'Coordinates', 'Date']
+            )
+            st.dataframe(df, width='stretch', hide_index=True)
+        else:
+            st.info("No recordings found. Import some first!")
+    
+    except Exception as e:
+        st.error(f"Error loading recordings: {str(e)}")
+    
+    # Display sequences (if any)
+    st.header("🎵 Sequences")
+    
+    try:
+        seq_rows = crud.get_sequences(conn)
+        
+        if seq_rows:
+            df_seq = pd.DataFrame(
+                seq_rows,
+                columns=['ID', 'Recording ID', 'Name', 'Timestamp', 'Duration', 'Label']
+            )
+            st.dataframe(df_seq, width='stretch', hide_index=True)
+        else:
+            st.info("No sequences found.")
+    
+    except Exception as e:
+        st.error(f"Error loading sequences: {str(e)}")
 
-    # # mostra tabelle
-    # recordings_table = ui.table(
-    #     get_all_recordings(),
-    #     columns=['ID', 'Name', 'Coordinates', 'Data']
-    # )
-
-    # sequences_table = ui.table(
-    #     get_all_sequences(),
-    #     columns=['ID', 'Recording ID', 'Name', 'Timestamp', 'Duration', 'Label']
-    # )
-
-    ui.run()
-
-if __name__ in {"__main__", "__mp_main__"}:
-    conn = db_conn.init_db(DB_FILE)
-    if conn:
-        print("Database created/existing")
-        conn.close()
-        run_ui()
-    else:
-        print("Error establishing db connection")
+if __name__ == "__main__":
+    main()
 
