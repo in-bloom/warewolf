@@ -4,7 +4,10 @@ from pathlib import Path
 import pandas as pd
 import os
 
+# === Import form with cache to save last used folder to import files, the import puts the file into de project folder ===
 DB_FILE = "db/warewolf.db"
+REC_PATH = "data/recordings"
+SEQ_PATH = "data/sequences"
 CACHE_FILE = ".streamlit_cache.txt"
 
 def get_connection():
@@ -54,21 +57,18 @@ def get_file_preview(folder_path):
 st.set_page_config(page_title="Warewolf - Import", layout="wide")
 st.title("Import Recordings")
 
-# Initialize connection
 conn = get_connection()
-
-# Get last used folder or use empty
 last_folder = load_last_folder()
 
-# Folder path input with autocomplete suggestions
+# import folder selection with last used folder
 folder_path = st.text_input(
     "Folder path",
     value=last_folder,
-    placeholder="/path/to/recordings",
+    placeholder="/absolute/path/to/recordings",
     help="Enter the absolute path to your recordings folder"
 )
 
-# Show folder preview
+# folder preview
 if folder_path:
     preview = get_file_preview(folder_path)
     if preview:
@@ -82,9 +82,9 @@ st.divider()
 # Import form
 st.subheader("Import Settings")
 data_value = st.text_input(
-    "Date (YYYY-MM-DD HH:MM:SS)",
-    placeholder="2025-12-06 14:30:00",
-    help="The date/time for this recording"
+    "Date (YYYY-MM-DD)",
+    placeholder="2025-12-06",
+    help="The date for this recording"
 )
 coords_value = st.text_input(
     "Coordinates (optional)",
@@ -99,7 +99,12 @@ if st.button("Import Recordings", type="primary"):
         else:
             try:
                 with st.spinner("Importing..."):
-                    result = data_loader.import_data(DB_FILE, folder_path, data_value, coords_value or None)
+                    result = data_loader.import_data(
+                        DB_FILE,
+                        folder_path,
+                        data_value,
+                        coords_value or None,
+                    )
                 st.success(f"Import completed: {result}")
                 save_last_folder(folder_path)
                 st.rerun()
@@ -120,7 +125,7 @@ with col2:
         st.rerun()
 
 try:
-    rows = crud.get_recordings(conn)
+    rows = crud.get_recordings(conn, limit=10)
     
     if rows:
         # Convert tuples to dataframe

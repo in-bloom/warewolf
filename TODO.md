@@ -12,6 +12,8 @@
 - [x] CLI interface for import (`main.py`)
 - [x] Unit tests for CRUD operations
 - [x] Streamlit web UI for data import and management (`ui_test_main.py`)
+- [ ] Sequence import within the splitting
+- [ ] Spectrogram view in Streamlit
 
 ## 🔄 In Progress
 

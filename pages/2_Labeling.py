@@ -5,8 +5,8 @@ import os
 
 DB_FILE = "db/warewolf.db"
 
-# Path globale ai file audio (lo imposterai tu)
-AUDIO_BASE_PATH = "audio_sequences"
+# Path globale ai file audio
+AUDIO_BASE_PATH = "data/sequences"
 
 
 def get_connection():
@@ -84,10 +84,10 @@ try:
 
         # Navigation
         nav_prev, nav_next = st.columns(2)
-        if nav_prev.button("⬅️ Prev", use_container_width=True):
+        if nav_prev.button("Prev", use_container_width=True):
             st.session_state[key_idx] = max(0, st.session_state[key_idx]-1)
             st.rerun()
-        if nav_next.button("➡️ Next", use_container_width=True):
+        if nav_next.button("Next", use_container_width=True):
             st.session_state[key_idx] = min(len(df)-1, st.session_state[key_idx]+1)
             st.rerun()
 
@@ -114,7 +114,6 @@ try:
         else:
             st.warning("Select a label first")
 
-    # Quick jump
     st.caption("Jump to sequence")
     jump_idx = st.slider("Index", 1, len(df), st.session_state[key_idx]+1)
     if jump_idx - 1 != st.session_state[key_idx]:

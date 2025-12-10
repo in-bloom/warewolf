@@ -33,7 +33,7 @@ def delete_recordings(conn, ids):
         return cur.rowcount
 
 
-def get_recordings(conn, ids=None):
+def get_recordings(conn, ids=None, limit=None):
     """
     Get recordings by IDs or fetch the first 10 if no IDs provided.
     
@@ -41,9 +41,15 @@ def get_recordings(conn, ids=None):
     :param ids: list of integers (optional - if empty/None, returns first 10 recordings)
     :return: list of tuples
     """
-    if not ids:
-        # Return first 10 recordings when no IDs specified
-        sql = "SELECT * FROM recordings ORDER BY id DESC LIMIT 10"
+    if not ids and not limit:
+        # Return all the recordings if no id or limit is specified
+        sql = "SELECT * FROM recordings ORDER BY id DESC"
+        cur = conn.execute(sql)
+        return cur.fetchall()
+    
+    if not ids and limit:
+        # Returns the specified number of rows requested
+        sql = f"SELECT * FROM recordings ORDER BY id DESC LIMIT {limit}"
         cur = conn.execute(sql)
         return cur.fetchall()
 

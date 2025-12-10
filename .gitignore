@@ -2,7 +2,8 @@
 db/
 .streamlit_cache.txt
 .DS_Store
-audio_sequences/*
+audio_sequences/
+data/
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
