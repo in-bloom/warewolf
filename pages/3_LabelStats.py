@@ -13,7 +13,7 @@ def get_connection():
 
 
 st.set_page_config(page_title="Warewolf - Label Stats", layout="wide")
-st.title("📊 Label Statistics")
+st.title("Label Statistics")
 
 conn = get_connection()
 

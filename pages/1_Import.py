@@ -52,7 +52,7 @@ def get_file_preview(folder_path):
         return None
 
 st.set_page_config(page_title="Warewolf - Import", layout="wide")
-st.title("📁 Import Recordings")
+st.title("Import Recordings")
 
 # Initialize connection
 conn = get_connection()
@@ -72,10 +72,10 @@ folder_path = st.text_input(
 if folder_path:
     preview = get_file_preview(folder_path)
     if preview:
-        st.success(f"✅ Folder valid")
-        st.caption(f"📊 Preview: {preview['audio_files']} audio files, {preview['total_files']} total files")
+        st.success(f"Folder valid")
+        st.caption(f"Preview: {preview['audio_files']} audio files, {preview['total_files']} total files")
     else:
-        st.error(f"❌ Folder not found or invalid")
+        st.error(f"Folder not found or invalid")
 
 st.divider()
 
@@ -92,31 +92,31 @@ coords_value = st.text_input(
     help="Recording location (latitude,longitude)"
 )
 
-if st.button("🚀 Import Recordings", type="primary"):
+if st.button("Import Recordings", type="primary"):
     if folder_path and data_value:
         if not os.path.isdir(folder_path):
-            st.error("❌ Invalid folder path")
+            st.error("Invalid folder path")
         else:
             try:
                 with st.spinner("Importing..."):
                     result = data_loader.import_data(DB_FILE, folder_path, data_value, coords_value or None)
-                st.success(f"✅ Import completed: {result}")
+                st.success(f"Import completed: {result}")
                 save_last_folder(folder_path)
                 st.rerun()
             except Exception as e:
-                st.error(f"❌ Error: {str(e)}")
+                st.error(f"Error: {str(e)}")
     else:
-        st.error("⚠️ Please fill in folder path and date")
+        st.error("Please fill in folder path and date")
 
 st.divider()
 
 # Display recordings
-st.header("📋 Recent Recordings")
+st.header("Recent Recordings")
 
 col1, col2 = st.columns([4, 1])
 
 with col2:
-    if st.button("🔄 Refresh"):
+    if st.button("Refresh"):
         st.rerun()
 
 try:

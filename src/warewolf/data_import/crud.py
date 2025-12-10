@@ -97,24 +97,28 @@ def delete_sequences(conn, ids):
         )
         return cur.rowcount
 
-def get_sequences(conn, ids=None):
+def get_sequences(conn, ids=None, recording_id=None):
     """
-    Docstring for get_sequences
-    
+    Fetch sequences.
+
     :param conn: connection
-    :param ids: list of ids to get from the table
-    :return: researched rows (by id)
-    :rtype: list | Any
+    :param ids: list of sequence ids to fetch
+    :param recording_id: optional recording id filter
+    :return: list of rows
     """
-    if not ids:
-        sql = "SELECT * FROM sequences ORDER BY id DESC LIMIT 10"
-        cur = conn.execute(sql)
+    if ids:
+        placeholders = ",".join("?" for _ in ids)
+        sql = f"SELECT * FROM sequences WHERE id IN ({placeholders})"
+        cur = conn.execute(sql, ids)
         return cur.fetchall()
 
-    placeholders = ",".join("?" for _ in ids)
-    sql = f"SELECT * FROM sequences WHERE id IN ({placeholders})"
+    if recording_id is not None:
+        sql = "SELECT * FROM sequences WHERE recording_id = ? ORDER BY id"
+        cur = conn.execute(sql, (recording_id,))
+        return cur.fetchall()
 
-    cur = conn.execute(sql, ids)
+    sql = "SELECT * FROM sequences ORDER BY id DESC LIMIT 10"
+    cur = conn.execute(sql)
     return cur.fetchall()
     
 def update_sequence(conn, id, **fields):
