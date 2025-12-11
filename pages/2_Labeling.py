@@ -94,31 +94,31 @@ try:
     st.divider()
 
     # Label selection
+    # Considera di aggiungere categorie dinamiche dal db (espandibili dall'utente) 
     categories = ["Lupo", "Capriolo", "Pecura", "Evelina Budassi", "Altro"]
+
     current_label = current_row['label'] if pd.notna(current_row['label']) else ""
-    new_label = st.selectbox(
-        "Label",
-        options=[""] + categories,
-        index=0 if not current_label else categories.index(current_label)+1 if current_label in categories else 0,
-        key=f"label_select_{current_row['id']}"
-    )
+    
+    st.write("**Select Label:**")
+    cols = st.columns(len(categories))
+    
+    for idx, category in enumerate(categories):
+        with cols[idx]:
+            button_type = "primary" if current_label == category else "secondary"
+            if st.button(category, key=f"label_{current_row['id']}_{category}", type=button_type, use_container_width=True):
+                updated = crud.update_sequence(conn, int(current_row['id']), label=category)
+                if updated:
+                    st.success(f"Labeled as '{category}'")
+                    st.rerun()
+                else:
+                    st.warning("Errore nell'aggiornamento")
 
-    if st.button("Save label", type="primary"):
-        if new_label:
-            updated = crud.update_sequence(conn, int(current_row['id']), label=new_label)
-            if updated:
-                st.success(f"Sequence {current_row['id']} labeled as '{new_label}'")
-                st.rerun()
-            else:
-                st.warning("Nessuna riga aggiornata: controlla l'ID della sequenza.")
-        else:
-            st.warning("Select a label first")
-
-    st.caption("Jump to sequence")
-    jump_idx = st.slider("Index", 1, len(df), st.session_state[key_idx]+1)
-    if jump_idx - 1 != st.session_state[key_idx]:
-        st.session_state[key_idx] = jump_idx - 1
-        st.rerun()
+    # Probabilmente useless ma mantieni nel caso potesse tornare utile
+    # st.caption("Jump to sequence")
+    # jump_idx = st.slider("Index", 1, len(df), st.session_state[key_idx]+1)
+    # if jump_idx - 1 != st.session_state[key_idx]:
+    #     st.session_state[key_idx] = jump_idx - 1
+    #     st.rerun()
 
 except Exception as e:
     st.error(f"Error loading sequences: {str(e)}")
